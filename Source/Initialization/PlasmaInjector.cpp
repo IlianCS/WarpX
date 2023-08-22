@@ -427,45 +427,49 @@ PlasmaInjector::PlasmaInjector (int ispecies, const std::string& name,
                 "Please specify '" + ps_name + ".mass' or "
                 "'" + ps_name + ".species_type' in your input file!\n");
 
-            if (charge_is_specified) {
-                ablastr::warn_manager::WMRecordWarning("Species",
-                    "Both '" + ps_name + ".charge' and '" +
-                        ps_name + ".injection_file' specify a charge.\n'" +
-                        ps_name + ".charge' will take precedence.\n");
-            }
-            else if (species_is_specified) {
-                ablastr::warn_manager::WMRecordWarning("Species",
-                    "Both '" + ps_name + ".species_type' and '" +
-                        ps_name + ".injection_file' specify a charge.\n'" +
-                        ps_name + ".species_type' will take precedence.\n");
-            }
-            else {
-                // TODO: Add ASSERT_WITH_MESSAGE to test if charge is a constant record
-                amrex::ParticleReal const p_q =
-                    ps["charge"][openPMD::RecordComponent::SCALAR].loadChunk<amrex::ParticleReal>().get()[0];
-                double const charge_unit = ps["charge"][openPMD::RecordComponent::SCALAR].unitSI();
-                charge = p_q * charge_unit;
-            }
-            if (mass_is_specified) {
-                ablastr::warn_manager::WMRecordWarning("Species",
-                    "Both '" + ps_name + ".mass' and '" +
-                        ps_name + ".injection_file' specify a charge.\n'" +
-                        ps_name + ".mass' will take precedence.\n");
-            }
-            else if (species_is_specified) {
-                ablastr::warn_manager::WMRecordWarning("Species",
-                    "Both '" + ps_name + ".species_type' and '" +
-                        ps_name + ".injection_file' specify a mass.\n'" +
-                        ps_name + ".species_type' will take precedence.\n");
-            }
-            else {
-                // TODO: Add ASSERT_WITH_MESSAGE to test if mass is a constant record
-                amrex::ParticleReal const p_m =
-                    ps["mass"][openPMD::RecordComponent::SCALAR].loadChunk<amrex::ParticleReal>().get()[0];
-                double const mass_unit = ps["mass"][openPMD::RecordComponent::SCALAR].unitSI();
-                mass = p_m * mass_unit;
-            }
-        } // IOProcessor
+        if (charge_is_specified) {
+            ablastr::warn_manager::WMRecordWarning("Species",
+                "Both '" + ps_name + ".charge' and '" +
+                    ps_name + ".injection_file' specify a charge.\n'" +
+                    ps_name + ".charge' will take precedence.\n");
+        }
+        else if (species_is_specified) {
+            ablastr::warn_manager::WMRecordWarning("Species",
+                "Both '" + ps_name + ".species_type' and '" +
+                    ps_name + ".injection_file' specify a charge.\n'" +
+                    ps_name + ".species_type' will take precedence.\n");
+        }
+        else {
+            // TODO: Add ASSERT_WITH_MESSAGE to test if charge is a constant record
+            auto p_q_ptr =
+                ps["charge"][openPMD::RecordComponent::SCALAR].loadChunk<amrex::ParticleReal>();
+            m_openpmd_input_series->flush();
+            amrex::ParticleReal const p_q = p_q_ptr.get()[0];
+            double const charge_unit = ps["charge"][openPMD::RecordComponent::SCALAR].unitSI();
+            charge = p_q * charge_unit;
+        }
+        if (mass_is_specified) {
+            ablastr::warn_manager::WMRecordWarning("Species",
+                "Both '" + ps_name + ".mass' and '" +
+                    ps_name + ".injection_file' specify a charge.\n'" +
+                    ps_name + ".mass' will take precedence.\n");
+        }
+        else if (species_is_specified) {
+            ablastr::warn_manager::WMRecordWarning("Species",
+                "Both '" + ps_name + ".species_type' and '" +
+                    ps_name + ".injection_file' specify a mass.\n'" +
+                    ps_name + ".species_type' will take precedence.\n");
+        }
+        else {
+            // TODO: Add ASSERT_WITH_MESSAGE to test if mass is a constant record
+            auto p_m_ptr =
+                ps["mass"][openPMD::RecordComponent::SCALAR].loadChunk<amrex::ParticleReal>();
+            m_openpmd_input_series->flush();
+            amrex::ParticleReal const p_m = p_m_ptr.get()[0];
+            double const mass_unit = ps["mass"][openPMD::RecordComponent::SCALAR].unitSI();
+            mass = p_m * mass_unit;
+        }
+    } // IOProcessor
 
         // Broadcast charge and mass to non-IO processors
         if (!charge_is_specified && !species_is_specified)
