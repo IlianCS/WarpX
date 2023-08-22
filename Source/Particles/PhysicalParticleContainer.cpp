@@ -581,7 +581,9 @@ PhysicalParticleContainer::AddPlasmaFromFile(ParticleReal q_tot,
 
         // assumption asserts: see PlasmaInjector
         openPMD::Iteration it = series->iterations.begin()->second;
-        double const t_lab = it.time<double>() * it.timeUnitSI();
+        double t_lab = 0._prt;
+        const ParmParse pp_species_name(species_name);
+        pp_species_name.query("t_lab", t_lab);
         std::string const ps_name = it.particles.begin()->first;
         openPMD::ParticleSpecies ps = it.particles.begin()->second;
 
